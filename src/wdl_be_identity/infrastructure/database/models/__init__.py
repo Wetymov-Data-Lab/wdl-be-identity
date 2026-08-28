@@ -3,7 +3,6 @@
 from .identity import (
     accounts,
     identifiers,
-    master_codes,
     password_history,
     passwords,
     profiles,
@@ -15,7 +14,6 @@ from .identity import (
 __all__ = [
     "accounts",
     "identifiers",
-    "master_codes",
     "password_history",
     "passwords",
     "profiles",

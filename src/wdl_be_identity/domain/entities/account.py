@@ -12,9 +12,7 @@ from wdl_be_identity.domain.exceptions import InvariantViolationError
 
 if TYPE_CHECKING:
     from wdl_be_identity.domain.entities.identifier import Identifier
-    from wdl_be_identity.domain.entities.master_code import MasterCode
     from wdl_be_identity.domain.entities.password import Password
-    from wdl_be_identity.domain.entities.password_history import PasswordHistory
     from wdl_be_identity.domain.entities.profile import Profile
     from wdl_be_identity.domain.entities.recovery_code import RecoveryCode
     from wdl_be_identity.domain.entities.second_factor import SecondFactor
@@ -42,16 +40,22 @@ class Account(Entity[UUID]):
     # Relations
     profile:     Profile | None    = field(default=None, init=False, repr=False)
     password:    Password | None   = field(default=None, init=False, repr=False)
-    master_code: MasterCode | None = field(default=None, init=False, repr=False)
 
     sessions:         list[Session]         = field(default_factory=list, init=False, repr=False)
     identifiers:      list[Identifier]      = field(default_factory=list, init=False, repr=False)
     second_factors:   list[SecondFactor]    = field(default_factory=list, init=False, repr=False)
     recovery_codes:   list[RecoveryCode]    = field(default_factory=list, init=False, repr=False)
-    password_history: list[PasswordHistory] = field(default_factory=list, init=False, repr=False)
 
     def touch(self) -> None:
         self.last_active_at = utc_now()
+
+    def enforce_2fa(self) -> None:
+        self.is_2fa_enforced = True
+        self.updated_at = utc_now()
+
+    def relax_2fa(self) -> None:
+        self.is_2fa_enforced = False
+        self.updated_at = utc_now()
 
     def assign_relations(self, *, password: Password | None, profile: Profile | None) -> None:
         self.password = password

@@ -7,21 +7,60 @@ from fastapi.responses import HTMLResponse
 
 SWAGGER_UI_THEME = """
 <style>
-  :root { color-scheme: light; --bg: #f6f8fb; --surface: #fff; --text: #18212f; }
+  :root {
+    color-scheme: light;
+    --bg: #f6f8fb;
+    --surface: #fff;
+    --text: #18212f;
+    --muted-text: #526173;
+    --border: #64748b;
+  }
   html[data-swagger-theme="dark"] {
-    color-scheme: dark; --bg: #0b1120; --surface: #111827; --text: #e5edf7;
+    color-scheme: dark;
+    --bg: #0b1120;
+    --surface: #111827;
+    --text: #e5edf7;
+    --muted-text: #b8c5d6;
   }
   body, .swagger-ui { background: var(--bg); color: var(--text); }
   .swagger-ui .info .title, .swagger-ui .info p, .swagger-ui .opblock-tag,
   .swagger-ui .model-title, .swagger-ui .model, .swagger-ui label {
     color: var(--text);
   }
+  .swagger-ui .opblock-tag small,
+  .swagger-ui .opblock .opblock-summary-path,
+  .swagger-ui .opblock .opblock-summary-path__deprecated,
+  .swagger-ui .opblock .opblock-summary-description {
+    color: var(--muted-text);
+  }
+  html[data-swagger-theme="dark"] .swagger-ui .opblock-control-arrow svg,
+  html[data-swagger-theme="dark"] .swagger-ui .expand-operation svg,
+  html[data-swagger-theme="dark"] .swagger-ui .models-control svg,
+  html[data-swagger-theme="dark"] .swagger-ui .model-toggle::after {
+    fill: var(--text);
+  }
+  html[data-swagger-theme="dark"] .swagger-ui .markdown p,
+  html[data-swagger-theme="dark"] .swagger-ui .renderedMarkdown p,
+  html[data-swagger-theme="dark"] .swagger-ui .opblock-description-wrapper p,
+  html[data-swagger-theme="dark"] .swagger-ui .opblock-external-docs-wrapper p,
+  html[data-swagger-theme="dark"] .swagger-ui .opblock-title_normal p,
+  html[data-swagger-theme="dark"] .swagger-ui .parameter__name,
+  html[data-swagger-theme="dark"] .swagger-ui .parameter__type,
+  html[data-swagger-theme="dark"] .swagger-ui .response-col_status,
+  html[data-swagger-theme="dark"] .swagger-ui .response-col_links,
+  html[data-swagger-theme="dark"] .swagger-ui .responses-inner h4,
+  html[data-swagger-theme="dark"] .swagger-ui .responses-inner h5,
+  html[data-swagger-theme="dark"] .swagger-ui table thead tr td,
+  html[data-swagger-theme="dark"] .swagger-ui table thead tr th,
+  html[data-swagger-theme="dark"] .swagger-ui .tab li {
+    color: var(--text);
+  }
   .swagger-ui .scheme-container, .swagger-ui section.models,
   .swagger-ui .model-container, .swagger-ui .opblock .opblock-section-header {
-    background: var(--surface); color: var(--text); border-color: #64748b;
+    background: var(--surface); color: var(--text); border-color: var(--border);
   }
   #swagger-theme-toggle { position: fixed; z-index: 10000; top: 14px; right: 18px;
-    height: 38px; padding: 0 14px; border: 1px solid #64748b; border-radius: 999px;
+    height: 38px; padding: 0 14px; border: 1px solid var(--border); border-radius: 999px;
     background: var(--surface); color: var(--text); cursor: pointer; }
 </style>
 <script>

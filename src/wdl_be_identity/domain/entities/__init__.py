@@ -1,7 +1,6 @@
 from .account import Account
 from .base import Entity
 from .identifier import Identifier
-from .master_code import MasterCode
 from .password import Password
 from .password_history import PasswordHistory
 from .profile import Profile
@@ -13,7 +12,6 @@ __all__ = [
     "Account",
     "Entity",
     "Identifier",
-    "MasterCode",
     "Password",
     "PasswordHistory",
     "Profile",

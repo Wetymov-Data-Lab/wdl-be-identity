@@ -14,6 +14,12 @@ class SQLAlchemyAccountRepository(AccountRepository):
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
 
+    async def list(self, *, limit: int, offset: int) -> list[Account]:
+        result = await self._session.scalars(
+            select(Account).order_by(accounts.c.created_at, accounts.c.id).limit(limit).offset(offset)
+        )
+        return list(result.all())
+
     async def get(self, entity_id: UUID) -> Account | None:
         account = await self._session.scalar(select(Account).where(accounts.c.id == entity_id))
         return account

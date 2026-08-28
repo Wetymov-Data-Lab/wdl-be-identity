@@ -23,7 +23,6 @@ from sqlalchemy.orm import relationship
 from wdl_be_identity.domain.entities import (
     Account,
     Identifier,
-    MasterCode,
     Password,
     PasswordHistory,
     Profile,
@@ -84,9 +83,16 @@ profiles = Table(
     Column("id", Uuid(as_uuid=True), primary_key=True),
     Column("account_id", Uuid(as_uuid=True), ForeignKey("accounts.id", ondelete="CASCADE"), nullable=False),
     Column("display_name", Text, nullable=False),
+    Column("given_name", Text, nullable=True),
+    Column("family_name", Text, nullable=True),
+    Column("bio", Text, nullable=True),
+    Column("job_title", Text, nullable=True),
+    Column("organization", Text, nullable=True),
     Column("locale", Text, nullable=True),
     Column("time_zone", Text, nullable=True),
     Column("picture_url", Text, nullable=True),
+    Column("website_url", Text, nullable=True),
+    Column("created_at", DateTime(timezone=True), nullable=False),
     Column("updated_at", DateTime(timezone=True), nullable=True),
     UniqueConstraint("account_id", name="uq_profiles_account_id"),
 )
@@ -101,16 +107,6 @@ passwords = Table(
     Column("version", Integer, nullable=False, server_default=text("1")),
     CheckConstraint("version >= 1", name="ck_passwords_version_positive"),
     UniqueConstraint("account_id", name="uq_passwords_account_id"),
-)
-
-master_codes = Table(
-    "master_codes",
-    Base.metadata,
-    Column("id", Uuid(as_uuid=True), primary_key=True),
-    Column("account_id", Uuid(as_uuid=True), ForeignKey("accounts.id", ondelete="CASCADE"), nullable=False),
-    Column("hash", Text, nullable=False),
-    Column("created_at", DateTime(timezone=True), nullable=False),
-    UniqueConstraint("account_id", name="uq_master_codes_account_id"),
 )
 
 second_factors = Table(
@@ -208,7 +204,6 @@ def start_mappers() -> None:
 
     Base.registry.map_imperatively(Profile, profiles)
     Base.registry.map_imperatively(Password, passwords)
-    Base.registry.map_imperatively(MasterCode, master_codes)
     Base.registry.map_imperatively(SecondFactor, second_factors)
     Base.registry.map_imperatively(RecoveryCode, recovery_codes)
     Base.registry.map_imperatively(PasswordHistory, password_history)
@@ -228,14 +223,6 @@ def start_mappers() -> None:
             ),
             "password": relationship(
                 Password,
-                cascade="all, delete-orphan",
-                lazy="joined",
-                passive_deletes=True,
-                single_parent=True,
-                uselist=False,
-            ),
-            "master_code": relationship(
-                MasterCode,
                 cascade="all, delete-orphan",
                 lazy="joined",
                 passive_deletes=True,
@@ -265,13 +252,6 @@ def start_mappers() -> None:
                 cascade="all, delete-orphan",
                 lazy="selectin",
                 passive_deletes=True,
-            ),
-            "password_history": relationship(
-                PasswordHistory,
-                cascade="all, delete-orphan",
-                lazy="selectin",
-                passive_deletes=True,
-                order_by=password_history.c.version.desc(),
             ),
         },
         version_id_col=accounts.c.version,

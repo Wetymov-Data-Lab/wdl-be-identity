@@ -26,6 +26,10 @@ class AccountRepository(Repository[Account, UUID], ABC):
     """Persistence contract for the account aggregate."""
 
     @abstractmethod
+    async def list(self, *, limit: int, offset: int) -> list[Account]:
+        """Return a stable page of account aggregates."""
+
+    @abstractmethod
     async def get_by_identifier(
         self,
         *,

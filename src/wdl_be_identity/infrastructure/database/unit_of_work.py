@@ -30,7 +30,8 @@ class SQLAlchemyUnitOfWork(UnitOfWork):
         if self.session is None:
             return
         try:
-            await self.rollback()
+            if exc_type is not None:
+                await self.rollback()
         finally:
             await self.session.close()
             self.session = None

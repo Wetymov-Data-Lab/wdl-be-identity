@@ -5,7 +5,6 @@ import pytest
 
 from wdl_be_identity.domain.entities import (
     Identifier,
-    MasterCode,
     Password,
     PasswordHistory,
     Profile,
@@ -28,7 +27,6 @@ def test_simple_entities_are_created_from_their_table_fields() -> None:
     account_id = new_id()
     set_at = datetime.now(UTC)
 
-    master_code = MasterCode(account_id=account_id, hash="master-hash")
     password_history = PasswordHistory(
         account_id=account_id,
         hash="old-hash",
@@ -36,9 +34,7 @@ def test_simple_entities_are_created_from_their_table_fields() -> None:
         version=1,
     )
 
-    assert_uuid4(master_code.id)
     assert_uuid4(password_history.id)
-    assert master_code.created_at.tzinfo is UTC
     assert password_history.set_at is set_at
 
 
@@ -75,31 +71,41 @@ def test_profile_update_replaces_public_fields() -> None:
 
     profile.update(
         display_name="New name",
+        given_name="Denis",
+        family_name="Vasin",
+        bio="Designing databases",
+        job_title="Software Engineer",
+        organization="WDL",
         locale="ru-RU",
         time_zone="Europe/Moscow",
         picture_url="https://example.test/avatar.png",
+        website_url="https://example.test",
     )
 
     assert profile.display_name == "New name"
+    assert profile.given_name == "Denis"
+    assert profile.family_name == "Vasin"
+    assert profile.bio == "Designing databases"
+    assert profile.job_title == "Software Engineer"
+    assert profile.organization == "WDL"
     assert profile.locale == "ru-RU"
     assert profile.time_zone == "Europe/Moscow"
     assert profile.picture_url == "https://example.test/avatar.png"
+    assert profile.website_url == "https://example.test"
+    assert profile.created_at.tzinfo is UTC
     assert profile.updated_at is not None
 
 
-def test_password_change_returns_history_snapshot() -> None:
+def test_password_change_replaces_hash_without_exposing_history() -> None:
     password = Password(account_id=new_id(), hash="old-hash")
     original_set_at = password.set_at
 
-    history = password.change(new_hash="new-hash")
+    result = password.change(new_hash="new-hash")
 
     assert password.hash == "new-hash"
     assert password.version == 2
     assert password.set_at >= original_set_at
-    assert history.account_id == password.account_id
-    assert history.hash == "old-hash"
-    assert history.set_at == original_set_at
-    assert history.version == 1
+    assert result is None
 
 
 def test_identifier_can_be_verified_and_used() -> None:

@@ -41,5 +41,7 @@ logs:
 stop:
 	docker compose stop
 
+restart: stop up
+
 down:
 	docker compose down -v

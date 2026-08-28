@@ -8,7 +8,6 @@ from wdl_be_identity.infrastructure.database.models import accounts
 EXPECTED_TABLES = {
     "accounts",
     "identifiers",
-    "master_codes",
     "password_history",
     "passwords",
     "profiles",
@@ -21,6 +20,15 @@ EXPECTED_TABLES = {
 def test_identity_metadata_contains_all_tables() -> None:
     assert set(Base.metadata.tables) == EXPECTED_TABLES
     assert isinstance(accounts, Table)
+    assert {
+        "given_name",
+        "family_name",
+        "bio",
+        "job_title",
+        "organization",
+        "website_url",
+        "created_at",
+    }.issubset(Base.metadata.tables["profiles"].c.keys())
 
 
 def test_account_is_mapped_as_an_aggregate() -> None:
@@ -31,12 +39,10 @@ def test_account_is_mapped_as_an_aggregate() -> None:
     assert set(mapper.relationships.keys()) == {
         "profile",
         "password",
-        "master_code",
         "sessions",
         "identifiers",
         "second_factors",
         "recovery_codes",
-        "password_history",
     }
 
 
