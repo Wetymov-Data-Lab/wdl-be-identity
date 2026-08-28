@@ -3,6 +3,9 @@ from types import TracebackType
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from wdl_be_identity.application.unit_of_work import UnitOfWork
+from wdl_be_identity.infrastructure.database.repositories.accounts import (
+    SQLAlchemyAccountRepository,
+)
 
 
 class SQLAlchemyUnitOfWork(UnitOfWork):
@@ -11,9 +14,11 @@ class SQLAlchemyUnitOfWork(UnitOfWork):
     def __init__(self, session_factory: async_sessionmaker[AsyncSession]) -> None:
         self._session_factory = session_factory
         self.session: AsyncSession | None = None
+        self._accounts: SQLAlchemyAccountRepository | None = None
 
     async def __aenter__(self) -> "SQLAlchemyUnitOfWork":
         self.session = self._session_factory()
+        self._accounts = SQLAlchemyAccountRepository(self.session)
         return self
 
     async def __aexit__(
@@ -29,6 +34,13 @@ class SQLAlchemyUnitOfWork(UnitOfWork):
         finally:
             await self.session.close()
             self.session = None
+            self._accounts = None
+
+    @property
+    def accounts(self) -> SQLAlchemyAccountRepository:
+        if self._accounts is None:
+            raise RuntimeError("Unit of work must be used as an async context manager")
+        return self._accounts
 
     async def commit(self) -> None:
         await self._get_session().commit()

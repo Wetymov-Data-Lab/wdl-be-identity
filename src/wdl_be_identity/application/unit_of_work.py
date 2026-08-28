@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 from types import TracebackType
 
+from wdl_be_identity.application.repositories import AccountRepository
+
 
 class UnitOfWork(ABC):
     """Transaction boundary for an application use case."""
@@ -15,6 +17,11 @@ class UnitOfWork(ABC):
         traceback: TracebackType | None,
     ) -> None:
         await self.rollback()
+
+    @property
+    @abstractmethod
+    def accounts(self) -> AccountRepository:
+        """Account repository bound to the current transaction."""
 
     @abstractmethod
     async def commit(self) -> None:
