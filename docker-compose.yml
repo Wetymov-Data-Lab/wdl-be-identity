@@ -1,0 +1,29 @@
+services:
+  api:
+    build:
+      context: .
+      additional_contexts:
+        wdl_shared: ../wdl-shared
+      dockerfile: Dockerfile
+      target: development
+    environment:
+      POSTGRES_SERVER: ${POSTGRES_DOCKER_SERVER:?POSTGRES_DOCKER_SERVER is required}
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is required}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB is required}
+      POSTGRES_PORT: ${POSTGRES_DOCKER_PORT:?POSTGRES_DOCKER_PORT is required}
+      DATABASE_CREATE_TABLES: ${DATABASE_CREATE_TABLES:-True}
+      CORS_DISABLE: ${CORS_DISABLE:?CORS_DISABLE is required}
+    ports:
+      - "${API_EXPOSE_PORT:?API_EXPOSE_PORT is required}:8000"
+    volumes:
+      - ./src:/workspace/wdl-be-identity/src
+      - ./migrations:/workspace/wdl-be-identity/migrations
+      - ../wdl-shared/src:/workspace/wdl-shared/src
+    networks:
+      - vendor-network
+
+networks:
+  vendor-network:
+    external: true
+    name: vendor-network
