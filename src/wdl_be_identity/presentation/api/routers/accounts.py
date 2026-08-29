@@ -159,6 +159,15 @@ async def update_2fa_policy(
     return to_account_response(account)
 
 
+@router.get("/{account_id}/profile", tags=["Profiles"], response_model=ProfileResponseModel)
+async def get_profile(
+    account_id: UUID,
+    uow: AccountUow,
+) -> ProfileResponseModel:
+    account = await AccountService(uow).get(account_id=account_id)
+    return to_profile_response(account.profile)
+
+
 @router.put("/{account_id}/profile", tags=["Profiles"], response_model=ProfileResponseModel)
 async def upsert_profile(
     account_id: UUID,

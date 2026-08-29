@@ -14,6 +14,8 @@ services:
       POSTGRES_PORT: ${POSTGRES_DOCKER_PORT:?POSTGRES_DOCKER_PORT is required}
       DATABASE_CREATE_TABLES: ${DATABASE_CREATE_TABLES:-True}
       CORS_DISABLE: ${CORS_DISABLE:?CORS_DISABLE is required}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      LOG_JSON: ${LOG_JSON:-False}
     ports:
       - "${API_EXPOSE_PORT:?API_EXPOSE_PORT is required}:8000"
     volumes:
