@@ -7,6 +7,7 @@ from loguru import logger
 from app.infrastructure.config import settings
 from app.infrastructure.cors import disable_cors_debug, production_cors
 from app.infrastructure.database.session import create_tables, engine
+from app.infrastructure.redis import get_redis_client
 from app.presentation.api.errors import setup_exception_handlers
 from app.presentation.api.router import api_router
 from app.presentation.api.swagger.docs import setup_docs_routes
@@ -22,7 +23,10 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     logger.info("Starting {} v{}", settings.PROJECT_NAME, settings.APP_VERSION)
     if settings.DATABASE_CREATE_TABLES:
         await create_tables()
+    redis = get_redis_client()
+    await redis.ping()
     yield
+    await redis.aclose()
     await engine.dispose()
     logger.info("{} stopped", settings.PROJECT_NAME)
 

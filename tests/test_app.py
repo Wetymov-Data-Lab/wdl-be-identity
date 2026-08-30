@@ -28,3 +28,14 @@ def test_boolean_settings_are_parsed_from_strings() -> None:
 
     assert settings.DEBUG is False
     assert settings.CORS_DISABLE is True
+
+
+def test_redis_uri_is_assembled() -> None:
+    settings = Settings(
+        REDIS_HOST="redis",
+        REDIS_PORT=6380,
+        REDIS_DB=2,
+        REDIS_PASSWORD="p@ssword",
+    )
+
+    assert settings.REDIS_URL == "redis://:p%40ssword@redis:6380/2"

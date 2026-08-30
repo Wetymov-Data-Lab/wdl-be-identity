@@ -16,3 +16,11 @@ class EntityNotFoundError(DomainError):
 
 class EntityAlreadyExistsError(DomainError):
     """An entity violates a uniqueness constraint."""
+
+
+class AuthenticationError(DomainError):
+    """Credentials or a bearer token cannot be authenticated."""
+
+
+class AuthorizationError(DomainError):
+    """An authenticated account is not allowed to proceed."""

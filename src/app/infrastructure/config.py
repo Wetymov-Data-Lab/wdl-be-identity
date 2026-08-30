@@ -1,6 +1,7 @@
 from functools import lru_cache
+from urllib.parse import quote_plus
 
-from pydantic import model_validator
+from pydantic import Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -32,6 +33,30 @@ class Settings(BaseSettings):
     SQLALCHEMY_ECHO:               bool       = False
     DATABASE_CREATE_TABLES:        bool       = True
 
+    # ---------------------------------------------------------------------------
+    # OAuth / JWT
+    # ---------------------------------------------------------------------------
+
+    JWT_SECRET_KEY:                   SecretStr = Field(
+        default=SecretStr("development-only-change-me-at-least-32-chars"),
+        min_length=32,
+    )
+    JWT_ISSUER:                       str       = "wdl-identity"
+    JWT_AUDIENCE:                     str       = "wdl-api"
+    JWT_ACCESS_TOKEN_EXPIRES_MINUTES: int       = Field(default=15, gt=0)
+    JWT_REFRESH_TOKEN_EXPIRES_DAYS:   int       = Field(default=30, gt=0)
+
+    # ---------------------------------------------------------------------------
+    # Redis
+    # ---------------------------------------------------------------------------
+
+    REDIS_HOST:       str              = "127.0.0.1"
+    REDIS_PORT:       int              = Field(default=6379, ge=1, le=65_535)
+    REDIS_DB:         int              = Field(default=0, ge=0)
+    REDIS_PASSWORD:   SecretStr | None = None
+    REDIS_URL:        str | None       = None
+    REDIS_KEY_PREFIX: str              = "wdl:identity"
+
     @model_validator(mode="after")
     def assemble_database_uri(self) -> "Settings":
         if not self.SQLALCHEMY_ASYNC_DATABASE_URI:
@@ -39,6 +64,15 @@ class Settings(BaseSettings):
                 f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
                 f"@{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
             )
+        return self
+
+    @model_validator(mode="after")
+    def assemble_redis_uri(self) -> "Settings":
+        if not self.REDIS_URL:
+            password = ""
+            if self.REDIS_PASSWORD is not None and self.REDIS_PASSWORD.get_secret_value():
+                password = f":{quote_plus(self.REDIS_PASSWORD.get_secret_value())}@"
+            self.REDIS_URL = f"redis://{password}{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDIS_DB}"
         return self
 
     model_config = SettingsConfigDict(

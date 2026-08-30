@@ -4,6 +4,7 @@ from wdl_shared.schemas.common import HealthResponse
 from app.presentation.api.routers import (
     accounts_router,
     identifiers_router,
+    oauth_router,
     passwords_router,
     profiles_router,
     recovery_codes_router,
@@ -21,6 +22,7 @@ api_router.include_router(passwords_router)
 api_router.include_router(second_factors_router)
 api_router.include_router(recovery_codes_router)
 api_router.include_router(sessions_router)
+api_router.include_router(oauth_router)
 
 
 @api_router.get("/health", tags=["System"], response_model=HealthResponse)

@@ -29,6 +29,29 @@ make up
 API в Docker будет доступно по адресу `http://localhost:8002`, документация —
 `http://localhost:8002/docs`. Команда `make dev` запускает API на порту `8000`.
 
+Перед запуском вне локальной разработки обязательно задайте уникальный
+`JWT_SECRET_KEY` длиной не менее 32 символов.
+
+</details>
+
+---
+
+<details>
+<summary><strong>OAuth</strong></summary>
+
+Сервис поддерживает OAuth2 Password flow для доверенных клиентов:
+
+- `POST /oauth/token` — вход с `grant_type=password` и обновление с
+  `grant_type=refresh_token` (form-urlencoded);
+- `POST /oauth/revoke` — идемпотентный отзыв сессии по access- или refresh-токену;
+- `POST /oauth/logout` — завершение текущей Bearer-сессии;
+- `GET /oauth/userinfo` — сведения о владельце access-токена.
+
+Refresh-токен ротируется при каждом обновлении. Повторное использование старого
+refresh-токена отзывает всю связанную сессию. Отозванные сессии сохраняются в
+Redis с TTL до окончания refresh-сессии; PostgreSQL остаётся постоянным источником
+состояния сессий.
+
 </details>
 
 ---

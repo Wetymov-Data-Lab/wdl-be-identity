@@ -218,7 +218,7 @@ def test_missing_account_returns_404(api: TestClient) -> None:
     assert response.status_code == 404
 
 
-def test_openapi_contains_management_api_but_not_auth_flows(api: TestClient) -> None:
+def test_openapi_contains_management_and_oauth_apis(api: TestClient) -> None:
     openapi = api.get("/openapi.json").json()
     paths = openapi["paths"]
 
@@ -229,6 +229,11 @@ def test_openapi_contains_management_api_but_not_auth_flows(api: TestClient) -> 
     assert "/second-factors/{account_id}" in paths
     assert "/recovery-codes/{account_id}" in paths
     assert "/sessions/{account_id}" in paths
+    assert "/oauth/token" in paths
+    assert "/oauth/revoke" in paths
+    assert "/oauth/logout" in paths
+    assert "/oauth/userinfo" in paths
+    assert paths["/oauth/userinfo"]["get"]["security"] == [{"OAuth2PasswordBearer": []}]
     assert "/accounts/{account_id}/master-code" not in paths
     assert all("login" not in path and "refresh-token" not in path for path in paths)
     assert "password_history" not in openapi["components"]["schemas"]["AccountResponseModel"]["properties"]
