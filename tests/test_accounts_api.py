@@ -146,7 +146,7 @@ def test_profile_and_password_management_do_not_expose_hashes(api: TestClient) -
     account_id = create_account(api)["id"]
 
     profile = api.put(
-        f"/accounts/{account_id}/profile",
+        f"/profiles/{account_id}",
         json={
             "display_name": "Denis",
             "locale": "ru-RU",
@@ -155,7 +155,7 @@ def test_profile_and_password_management_do_not_expose_hashes(api: TestClient) -
         },
     )
     password = api.put(
-        f"/accounts/{account_id}/password",
+        f"/passwords/{account_id}",
         json={"password": "another correct horse battery staple"},
     )
     account = api.get(f"/accounts/{account_id}")
@@ -172,7 +172,7 @@ def test_identifier_management_and_lookup(api: TestClient) -> None:
     account_id = create_account(api)["id"]
 
     created = api.post(
-        f"/accounts/{account_id}/identifiers",
+        f"/identifiers/{account_id}",
         json={
             "type": "email",
             "value": "user@example.test",
@@ -181,9 +181,9 @@ def test_identifier_management_and_lookup(api: TestClient) -> None:
         },
     )
     identifier_id = created.json()["id"]
-    verified = api.post(f"/accounts/{account_id}/identifiers/{identifier_id}/verify")
+    verified = api.post(f"/identifiers/{account_id}/{identifier_id}/verify")
     lookup = api.get(
-        "/accounts/by-identifier",
+        "/identifiers/by-identifier",
         params={"type": "email", "value": "user@example.test"},
     )
 
@@ -199,7 +199,7 @@ def test_session_management_does_not_expose_refresh_hash(api: TestClient) -> Non
     expires_at = datetime.now(UTC) + timedelta(hours=1)
 
     response = api.post(
-        f"/accounts/{account_id}/sessions",
+        f"/sessions/{account_id}",
         json={
             "ip": "127.0.0.1",
             "refresh_token_hash": "already-hashed-token",
@@ -223,12 +223,27 @@ def test_openapi_contains_management_api_but_not_auth_flows(api: TestClient) -> 
     paths = openapi["paths"]
 
     assert "/accounts/" in paths
-    assert "/accounts/{account_id}/second-factors" in paths
-    assert "/accounts/{account_id}/recovery-codes" in paths
-    assert "/accounts/{account_id}/sessions" in paths
+    assert "/profiles/{account_id}" in paths
+    assert "/passwords/{account_id}" in paths
+    assert "/identifiers/{account_id}" in paths
+    assert "/second-factors/{account_id}" in paths
+    assert "/recovery-codes/{account_id}" in paths
+    assert "/sessions/{account_id}" in paths
     assert "/accounts/{account_id}/master-code" not in paths
     assert all("login" not in path and "refresh-token" not in path for path in paths)
     assert "password_history" not in openapi["components"]["schemas"]["AccountResponseModel"]["properties"]
-    assert paths["/accounts/{account_id}/profile"]["put"]["tags"] == ["Profiles"]
-    assert paths["/accounts/{account_id}/identifiers"]["post"]["tags"] == ["Identifiers"]
-    assert paths["/accounts/{account_id}/sessions"]["post"]["tags"] == ["Sessions"]
+    assert paths["/profiles/{account_id}"]["put"]["tags"] == ["Profiles"]
+    assert paths["/identifiers/{account_id}"]["post"]["tags"] == ["Identifiers"]
+    assert paths["/sessions/{account_id}"]["post"]["tags"] == ["Sessions"]
+    assert all(
+        not path.startswith(f"/accounts/{{account_id}}/{resource}")
+        for path in paths
+        for resource in (
+            "profile",
+            "password",
+            "identifiers",
+            "second-factors",
+            "recovery-codes",
+            "sessions",
+        )
+    )
