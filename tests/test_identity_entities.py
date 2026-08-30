@@ -3,7 +3,7 @@ from uuid import UUID
 
 import pytest
 
-from wdl_be_identity.domain.entities import (
+from app.domain.entities import (
     Identifier,
     Password,
     PasswordHistory,
@@ -12,7 +12,7 @@ from wdl_be_identity.domain.entities import (
     SecondFactor,
     Session,
 )
-from wdl_be_identity.domain.exceptions import InvariantViolationError
+from app.domain.exceptions import InvariantViolationError
 
 
 def new_id() -> UUID:

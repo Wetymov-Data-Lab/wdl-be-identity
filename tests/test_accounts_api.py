@@ -5,12 +5,12 @@ from uuid import UUID
 import pytest
 from fastapi.testclient import TestClient
 
-from wdl_be_identity.application.repositories import AccountRepository
-from wdl_be_identity.application.unit_of_work import UnitOfWork
-from wdl_be_identity.domain.entities import Account
-from wdl_be_identity.main import create_app
-from wdl_be_identity.presentation.api.dependencies.passwords import get_password_hasher
-from wdl_be_identity.presentation.api.dependencies.unit_of_work import get_account_uow
+from app.application.repositories import AccountRepository
+from app.application.unit_of_work import UnitOfWork
+from app.domain.entities import Account
+from app.main import create_app
+from app.presentation.api.dependencies.passwords import get_password_hasher
+from app.presentation.api.dependencies.unit_of_work import get_account_uow
 
 
 class FakeAccountRepository(AccountRepository):

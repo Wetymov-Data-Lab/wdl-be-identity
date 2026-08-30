@@ -1,0 +1,57 @@
+from types import TracebackType
+
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+
+from app.application.unit_of_work import UnitOfWork
+from app.infrastructure.database.repositories.accounts import (
+    SQLAlchemyAccountRepository,
+)
+
+
+class SQLAlchemyUnitOfWork(UnitOfWork):
+    """SQLAlchemy transaction boundary for application use cases."""
+
+    def __init__(self, session_factory: async_sessionmaker[AsyncSession]) -> None:
+        self._session_factory = session_factory
+        self.session: AsyncSession | None = None
+        self._accounts: SQLAlchemyAccountRepository | None = None
+
+    async def __aenter__(self) -> "SQLAlchemyUnitOfWork":
+        self.session = self._session_factory()
+        self._accounts = SQLAlchemyAccountRepository(self.session)
+        return self
+
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: TracebackType | None,
+    ) -> None:
+        if self.session is None:
+            return
+        try:
+            if exc_type is not None:
+                await self.rollback()
+        finally:
+            await self.session.close()
+            self.session = None
+            self._accounts = None
+
+    @property
+    def accounts(self) -> SQLAlchemyAccountRepository:
+        if self._accounts is None:
+            raise RuntimeError("Unit of work must be used as an async context manager")
+        return self._accounts
+
+    async def commit(self) -> None:
+        await self.accounts.flush()
+        await self._get_session().commit()
+        self.accounts.accept_changes()
+
+    async def rollback(self) -> None:
+        await self._get_session().rollback()
+
+    def _get_session(self) -> AsyncSession:
+        if self.session is None:
+            raise RuntimeError("Unit of work must be used as an async context manager")
+        return self.session

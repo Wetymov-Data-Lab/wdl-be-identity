@@ -1,9 +1,20 @@
 from sqlalchemy import Table, create_mock_engine, inspect
 
-from wdl_be_identity.domain.entities import Account, Profile
-from wdl_be_identity.domain.enums import AccountStatus, AccountSubject
-from wdl_be_identity.infrastructure.database.base import Base
-from wdl_be_identity.infrastructure.database.models import accounts
+from app.domain.entities import Account, Profile
+from app.domain.enums import AccountStatus, AccountSubject
+from app.infrastructure.database.base import Base
+from app.infrastructure.database.models import (
+    AccountModel,
+    IdentifierModel,
+    PasswordHistoryModel,
+    PasswordModel,
+    ProfileModel,
+    RecoveryCodeModel,
+    SecondFactorModel,
+    SessionModel,
+    accounts,
+)
+from app.infrastructure.database.repositories import SQLAlchemyAccountRepository
 
 EXPECTED_TABLES = {
     "accounts",
@@ -20,6 +31,8 @@ EXPECTED_TABLES = {
 def test_identity_metadata_contains_all_tables() -> None:
     assert set(Base.metadata.tables) == EXPECTED_TABLES
     assert isinstance(accounts, Table)
+    assert accounts is AccountModel.__table__
+    assert Base.metadata.tables["profiles"] is ProfileModel.__table__
     assert {
         "given_name",
         "family_name",
@@ -31,8 +44,25 @@ def test_identity_metadata_contains_all_tables() -> None:
     }.issubset(Base.metadata.tables["profiles"].c.keys())
 
 
+def test_orm_models_are_split_by_entity_and_repository_by_aggregate() -> None:
+    models = {
+        "account": AccountModel,
+        "identifier": IdentifierModel,
+        "password_history": PasswordHistoryModel,
+        "password": PasswordModel,
+        "profile": ProfileModel,
+        "recovery_code": RecoveryCodeModel,
+        "second_factor": SecondFactorModel,
+        "session": SessionModel,
+    }
+
+    for module_name, model in models.items():
+        assert model.__module__.endswith(f".models.{module_name}")
+    assert SQLAlchemyAccountRepository.__module__.endswith(".repositories.accounts")
+
+
 def test_account_is_mapped_as_an_aggregate() -> None:
-    mapper = inspect(Account)
+    mapper = inspect(AccountModel)
 
     assert mapper.local_table is accounts
     assert mapper.version_id_col is accounts.c.version
@@ -44,6 +74,7 @@ def test_account_is_mapped_as_an_aggregate() -> None:
         "second_factors",
         "recovery_codes",
     }
+    assert inspect(Account, raiseerr=False) is None
 
 
 def test_domain_defaults_survive_sqlalchemy_instrumentation() -> None:

@@ -1,6 +1,6 @@
 import pytest
 
-from wdl_be_identity.infrastructure.passwords import Argon2PasswordHasher
+from app.infrastructure.passwords import Argon2PasswordHasher
 
 
 @pytest.mark.asyncio

@@ -10,7 +10,7 @@ COPY --from=wdl_shared . /workspace/wdl-shared
 COPY . /workspace/wdl-be-identity
 RUN uv sync --frozen --all-groups
 
-CMD ["uv", "run", "uvicorn", "wdl_be_identity.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+CMD ["uv", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
 
 FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim AS production
 
@@ -29,4 +29,4 @@ COPY migrations ./migrations
 RUN uv sync --frozen --no-dev
 
 EXPOSE 8000
-CMD ["uv", "run", "--no-sync", "uvicorn", "wdl_be_identity.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uv", "run", "--no-sync", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

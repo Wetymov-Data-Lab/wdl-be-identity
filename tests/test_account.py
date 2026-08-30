@@ -3,12 +3,12 @@ from uuid import UUID
 
 import pytest
 
-from wdl_be_identity.domain.entities.account import Account
-from wdl_be_identity.domain.entities.identifier import Identifier
-from wdl_be_identity.domain.entities.password import Password
-from wdl_be_identity.domain.entities.profile import Profile
-from wdl_be_identity.domain.enums import AccountStatus, AccountSubject
-from wdl_be_identity.domain.exceptions import InvariantViolationError
+from app.domain.entities.account import Account
+from app.domain.entities.identifier import Identifier
+from app.domain.entities.password import Password
+from app.domain.entities.profile import Profile
+from app.domain.enums import AccountStatus, AccountSubject
+from app.domain.exceptions import InvariantViolationError
 
 
 def make_account(*, status: AccountStatus = AccountStatus.PENDING) -> Account:

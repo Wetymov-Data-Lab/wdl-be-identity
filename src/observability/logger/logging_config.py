@@ -6,7 +6,7 @@ import sys
 from loguru import logger
 
 LOG_FORMAT = (
-    "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> "
+    "<green>{time:DD-MM-YYYY HH:mm:ss.SSS}</green> "
     "<dim>|</dim> <level>{level: <8}</level> "
     "<dim>|</dim> <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> "
     "<dim>|</dim> <level>{message}</level>"

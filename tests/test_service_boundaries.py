@@ -1,4 +1,4 @@
-from wdl_be_identity.application.services import (
+from app.application.services import (
     AccountService,
     IdentifierService,
     PasswordService,
@@ -8,7 +8,7 @@ from wdl_be_identity.application.services import (
     SecondFactorService,
     SessionService,
 )
-from wdl_be_identity.presentation.api.routers import (
+from app.presentation.api.routers import (
     identifiers_router,
     passwords_router,
     profiles_router,

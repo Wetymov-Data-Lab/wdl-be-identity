@@ -1,5 +1,5 @@
-from wdl_be_identity.infrastructure.config import Settings
-from wdl_be_identity.main import create_app
+from app.infrastructure.config import Settings
+from app.main import create_app
 
 
 def test_app_metadata() -> None:

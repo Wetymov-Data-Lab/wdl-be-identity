@@ -5,9 +5,9 @@ from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
-import wdl_be_identity.infrastructure.database.models  # noqa: F401
-from wdl_be_identity.infrastructure.config import get_settings
-from wdl_be_identity.infrastructure.database.base import Base
+import app.infrastructure.database.models  # noqa: F401
+from app.infrastructure.config import get_settings
+from app.infrastructure.database.base import Base
 
 config = context.config
 database_uri = get_settings().SQLALCHEMY_ASYNC_DATABASE_URI
