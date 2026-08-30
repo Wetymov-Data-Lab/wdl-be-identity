@@ -7,7 +7,7 @@ from wdl_shared.schemas.identity import AccountResponseModel
 from app.application.services.accounts import AccountService
 from app.application.unit_of_work import UnitOfWork
 from app.presentation.api.presenters import to_account_response
-from app.presentation.api.routers._dependencies import AccountUow
+from app.presentation.api.routers._dependencies import AccountUow, CurrentAccount
 
 router = APIRouter(prefix="/accounts")
 
@@ -15,6 +15,7 @@ router = APIRouter(prefix="/accounts")
 @router.get("/", tags=["Accounts"], response_model=list[AccountResponseModel])
 async def list_accounts(
     uow: AccountUow,
+    account: CurrentAccount,
     limit: Annotated[int, Query(ge=1, le=100)] = 50,
     offset: Annotated[int, Query(ge=0)] = 0,
 ) -> list[AccountResponseModel]:

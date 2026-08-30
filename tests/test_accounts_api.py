@@ -142,32 +142,6 @@ def test_create_account_with_profile_and_identifier(api: TestClient) -> None:
     assert body["identifiers"][0]["value"] == "denis@example.com"
 
 
-def test_profile_and_password_management_do_not_expose_hashes(api: TestClient) -> None:
-    account_id = create_account(api)["id"]
-
-    profile = api.put(
-        f"/profiles/{account_id}",
-        json={
-            "display_name": "Denis",
-            "locale": "ru-RU",
-            "time_zone": "Europe/Moscow",
-            "picture_url": None,
-        },
-    )
-    password = api.put(
-        f"/passwords/{account_id}",
-        json={"password": "another correct horse battery staple"},
-    )
-    account = api.get(f"/accounts/{account_id}")
-
-    assert profile.status_code == 200
-    assert profile.json()["display_name"] == "Denis"
-    assert password.status_code == 200
-    assert "hash" not in password.json()
-    assert "password" not in password.json()
-    assert "hash" not in account.json()["password"]
-
-
 def test_identifier_management_and_lookup(api: TestClient) -> None:
     account_id = create_account(api)["id"]
 

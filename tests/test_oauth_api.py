@@ -230,3 +230,50 @@ def test_revoke_is_idempotent_for_invalid_tokens(api: TestClient) -> None:
 
     assert response.status_code == 200
     assert response.content == b""
+
+
+def test_account_list_and_profiles_require_authentication(api: TestClient) -> None:
+    account_id = _register_and_activate(api)
+    assert api.get("/accounts/").status_code == 401
+    assert api.get(f"/profiles/{account_id}").status_code == 401
+    assert api.put(f"/profiles/{account_id}", json={"display_name": "Test"}).status_code == 401
+    assert api.delete(f"/profiles/{account_id}").status_code == 401
+
+    login = _login(api)
+    assert login.status_code == 200
+    headers = {"Authorization": f"Bearer {login.json()['access_token']}"}
+    assert api.get("/accounts/", headers=headers).status_code == 200
+    profile = api.get(f"/profiles/{account_id}", headers=headers)
+    assert profile.status_code == 200
+    assert profile.json()["account_id"] == account_id
+
+
+def test_profile_and_password_management_do_not_expose_hashes(api: TestClient) -> None:
+    account_id = _register_and_activate(api)
+    login = _login(api)
+    assert login.status_code == 200
+    headers = {"Authorization": f"Bearer {login.json()['access_token']}"}
+
+    profile = api.put(
+        f"/profiles/{account_id}",
+        headers=headers,
+        json={
+            "display_name": "Denis",
+            "locale": "ru-RU",
+            "time_zone": "Europe/Moscow",
+            "picture_url": None,
+        },
+    )
+    password = api.put(
+        f"/passwords/{account_id}",
+        headers=headers,
+        json={"password": "another correct horse battery staple"},
+    )
+    account = api.get(f"/accounts/{account_id}", headers=headers)
+
+    assert profile.status_code == 200
+    assert profile.json()["display_name"] == "Denis"
+    assert password.status_code == 200
+    assert "hash" not in password.json()
+    assert "password" not in password.json()
+    assert "hash" not in account.json()["password"]
