@@ -84,6 +84,21 @@ SWAGGER_UI_THEME = """
     border-color: var(--swagger-border);
   }
 
+  /* Swagger's invalid-field background is light even when dark mode is active. */
+  html[data-swagger-theme="dark"] .swagger-ui input.invalid,
+  html[data-swagger-theme="dark"] .swagger-ui textarea.invalid,
+  html[data-swagger-theme="dark"] .swagger-ui select.invalid {
+    background: #2b1b25 !important;
+    color: var(--swagger-text);
+    border-color: #f87171;
+  }
+
+  html[data-swagger-theme="dark"] .swagger-ui input.invalid::placeholder,
+  html[data-swagger-theme="dark"] .swagger-ui textarea.invalid::placeholder {
+    color: var(--swagger-text-muted);
+    opacity: 1;
+  }
+
   .swagger-ui .scheme-container,
   .swagger-ui section.models,
   .swagger-ui .dialog-ux .modal-ux {
@@ -398,7 +413,7 @@ def setup_docs_routes(app: FastAPI) -> None:
                 "tryItOutEnabled": True,
             },
         )
-        return HTMLResponse(_customize_swagger_html(swagger_ui.body.decode("utf-8")))
+        return HTMLResponse(_customize_swagger_html(bytes(swagger_ui.body).decode("utf-8")))
 
     @app.get("/docs/oauth2-redirect", include_in_schema=False)
     async def swagger_ui_redirect() -> HTMLResponse:
