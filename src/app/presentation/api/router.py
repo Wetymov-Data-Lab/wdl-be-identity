@@ -1,6 +1,7 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from wdl_shared.schemas.common import HealthResponse
 
+from app.presentation.api.dependencies.authentication import get_current_account
 from app.presentation.api.routers import (
     accounts_router,
     identifiers_router,
@@ -14,14 +15,18 @@ from app.presentation.api.routers import (
 )
 
 api_router = APIRouter()
-api_router.include_router(identifiers_router)
+authenticated_router = APIRouter(dependencies=[Depends(get_current_account)])
+
+authenticated_router.include_router(identifiers_router)
+authenticated_router.include_router(accounts_router)
+authenticated_router.include_router(profiles_router)
+authenticated_router.include_router(passwords_router)
+authenticated_router.include_router(second_factors_router)
+authenticated_router.include_router(recovery_codes_router)
+authenticated_router.include_router(sessions_router)
+
 api_router.include_router(registrations_router)
-api_router.include_router(accounts_router)
-api_router.include_router(profiles_router)
-api_router.include_router(passwords_router)
-api_router.include_router(second_factors_router)
-api_router.include_router(recovery_codes_router)
-api_router.include_router(sessions_router)
+api_router.include_router(authenticated_router)
 api_router.include_router(oauth_router)
 
 

@@ -9,6 +9,7 @@ from app.application.repositories import AccountRepository
 from app.application.unit_of_work import UnitOfWork
 from app.domain.entities import Account
 from app.main import create_app
+from app.presentation.api.dependencies.authentication import get_current_account
 from app.presentation.api.dependencies.passwords import get_password_hasher
 from app.presentation.api.dependencies.unit_of_work import get_account_uow
 
@@ -81,6 +82,7 @@ def api() -> Iterator[TestClient]:
     unit_of_work = FakeUnitOfWork()
     app = create_app()
     app.dependency_overrides[get_account_uow] = lambda: unit_of_work
+    app.dependency_overrides[get_current_account] = lambda: None
     app.dependency_overrides[get_password_hasher] = FakePasswordHasher
     client = TestClient(app)
     yield client

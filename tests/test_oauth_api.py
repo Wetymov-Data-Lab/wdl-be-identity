@@ -91,8 +91,12 @@ class FakeSessionRevocationStore(SessionRevocationStore):
 
 
 @pytest.fixture
-def api() -> Iterator[TestClient]:
-    unit_of_work = FakeUnitOfWork()
+def unit_of_work() -> FakeUnitOfWork:
+    return FakeUnitOfWork()
+
+
+@pytest.fixture
+def api(unit_of_work: FakeUnitOfWork) -> Iterator[TestClient]:
     token_codec = JWTTokenCodec(
         secret_key="test-secret-key-that-is-long-enough",
         issuer="test-identity",
@@ -110,7 +114,7 @@ def api() -> Iterator[TestClient]:
     client.close()
 
 
-def _register_and_activate(api: TestClient) -> str:
+def _register_and_activate(api: TestClient, unit_of_work: FakeUnitOfWork) -> str:
     registered = api.post(
         "/accounts/",
         json={
@@ -120,7 +124,7 @@ def _register_and_activate(api: TestClient) -> str:
         },
     )
     account_id = registered.json()["id"]
-    assert api.post(f"/accounts/{account_id}/activate").status_code == 200
+    unit_of_work.accounts.items[UUID(account_id)].activate()
     return account_id
 
 
@@ -135,7 +139,10 @@ def _login(api: TestClient, *, password: str = "correct horse battery staple") -
     )
 
 
-def test_password_login_requires_active_account_and_valid_credentials(api: TestClient) -> None:
+def test_password_login_requires_active_account_and_valid_credentials(
+    api: TestClient,
+    unit_of_work: FakeUnitOfWork,
+) -> None:
     registered = api.post(
         "/accounts/",
         json={
@@ -146,15 +153,19 @@ def test_password_login_requires_active_account_and_valid_credentials(api: TestC
     )
 
     assert _login(api).status_code == 403
-    api.post(f"/accounts/{registered.json()['id']}/activate")
+    account_id = UUID(registered.json()["id"])
+    unit_of_work.accounts.items[account_id].activate()
     response = _login(api, password="wrong password")
 
     assert response.status_code == 401
     assert response.headers["www-authenticate"] == "Bearer"
 
 
-def test_login_userinfo_refresh_rotation_and_logout(api: TestClient) -> None:
-    account_id = _register_and_activate(api)
+def test_login_userinfo_refresh_rotation_and_logout(
+    api: TestClient,
+    unit_of_work: FakeUnitOfWork,
+) -> None:
+    account_id = _register_and_activate(api, unit_of_work)
     login = _login(api)
 
     assert login.status_code == 200
@@ -232,12 +243,23 @@ def test_revoke_is_idempotent_for_invalid_tokens(api: TestClient) -> None:
     assert response.content == b""
 
 
-def test_account_list_and_profiles_require_authentication(api: TestClient) -> None:
-    account_id = _register_and_activate(api)
-    assert api.get("/accounts/").status_code == 401
-    assert api.get(f"/profiles/{account_id}").status_code == 401
-    assert api.put(f"/profiles/{account_id}", json={"display_name": "Test"}).status_code == 401
-    assert api.delete(f"/profiles/{account_id}").status_code == 401
+def test_management_routers_require_authentication(
+    api: TestClient,
+    unit_of_work: FakeUnitOfWork,
+) -> None:
+    account_id = _register_and_activate(api, unit_of_work)
+    protected_requests = (
+        ("GET", "/accounts/"),
+        ("GET", "/identifiers/by-identifier"),
+        ("GET", f"/profiles/{account_id}"),
+        ("PUT", f"/passwords/{account_id}"),
+        ("POST", f"/second-factors/{account_id}"),
+        ("POST", f"/recovery-codes/{account_id}"),
+        ("POST", f"/sessions/{account_id}"),
+    )
+
+    for method, path in protected_requests:
+        assert api.request(method, path).status_code == 401
 
     login = _login(api)
     assert login.status_code == 200
@@ -248,8 +270,11 @@ def test_account_list_and_profiles_require_authentication(api: TestClient) -> No
     assert profile.json()["account_id"] == account_id
 
 
-def test_profile_and_password_management_do_not_expose_hashes(api: TestClient) -> None:
-    account_id = _register_and_activate(api)
+def test_profile_and_password_management_do_not_expose_hashes(
+    api: TestClient,
+    unit_of_work: FakeUnitOfWork,
+) -> None:
+    account_id = _register_and_activate(api, unit_of_work)
     login = _login(api)
     assert login.status_code == 200
     headers = {"Authorization": f"Bearer {login.json()['access_token']}"}

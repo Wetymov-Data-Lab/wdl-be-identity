@@ -1,14 +1,13 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Response, status
+from fastapi import APIRouter, Response, status
 from wdl_shared.schemas.identity import ProfileResponseModel, ProfileUpdateModel
 
 from app.application.services.profiles import ProfileService
-from app.presentation.api.dependencies.authentication import get_current_account
 from app.presentation.api.presenters import to_profile_response
 from app.presentation.api.routers._dependencies import AccountUow
 
-router = APIRouter(prefix="/profiles", dependencies=[Depends(get_current_account)])
+router = APIRouter(prefix="/profiles")
 
 
 @router.get("/{account_id}", tags=["Profiles"], response_model=ProfileResponseModel)
