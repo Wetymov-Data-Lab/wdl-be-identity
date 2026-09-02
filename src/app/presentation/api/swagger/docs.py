@@ -195,6 +195,25 @@ SWAGGER_UI_THEME = """
     fill: currentColor;
   }
 
+  html[data-swagger-theme="dark"] .swagger-ui .authorization__btn,
+  html[data-swagger-theme="dark"] .swagger-ui .authorization__btn svg,
+  html[data-swagger-theme="dark"] .swagger-ui .authorization__btn svg path {
+    color: #ffffff;
+    fill: #ffffff;
+  }
+
+  html[data-swagger-theme="dark"] .swagger-ui .opblock-control-arrow svg,
+  html[data-swagger-theme="dark"] .swagger-ui .opblock-control-arrow svg path,
+  html[data-swagger-theme="dark"] .swagger-ui .expand-operation svg,
+  html[data-swagger-theme="dark"] .swagger-ui .expand-operation svg path {
+    color: #ffffff;
+    fill: #ffffff;
+  }
+
+  .swagger-ui .opblock .opblock-summary .view-line-link.copy-to-clipboard {
+    display: none !important;
+  }
+
   #swagger-theme-toggle {
     position: fixed;
     z-index: 10000;
