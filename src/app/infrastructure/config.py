@@ -1,4 +1,5 @@
 from functools import lru_cache
+from typing import Literal
 from urllib.parse import quote_plus
 
 from pydantic import Field, SecretStr, model_validator
@@ -13,6 +14,7 @@ class Settings(BaseSettings):
     APP_VERSION:     str        = "0.1.0"
     PROJECT_NAME:    str        = "WDL Identity API"
     PROJECT_DESC:    str        = "API аутентификации и управления учетными записями"
+    ENVIRONMENT:     Literal["development", "test", "production"] = "development"
 
     DEBUG:           bool       = False
 
@@ -73,6 +75,23 @@ class Settings(BaseSettings):
             if self.REDIS_PASSWORD is not None and self.REDIS_PASSWORD.get_secret_value():
                 password = f":{quote_plus(self.REDIS_PASSWORD.get_secret_value())}@"
             self.REDIS_URL = f"redis://{password}{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDIS_DB}"
+        return self
+
+    @model_validator(mode="after")
+    def reject_unsafe_production_settings(self) -> "Settings":
+        if self.ENVIRONMENT != "production":
+            return self
+        if self.JWT_SECRET_KEY.get_secret_value() in {
+            "development-only-change-me-at-least-32-chars",
+            "replace-with-at-least-32-random-characters",
+        }:
+            raise ValueError("JWT_SECRET_KEY must be changed in production")
+        if self.POSTGRES_PASSWORD in {None, "", "admin", "postgres"}:
+            raise ValueError("POSTGRES_PASSWORD must be changed in production")
+        if self.DEBUG:
+            raise ValueError("DEBUG must be disabled in production")
+        if self.CORS_DISABLE or self.CORS_REGEX.strip() in {"*", ".*", "^.*$"}:
+            raise ValueError("Wildcard CORS must be disabled in production")
         return self
 
     model_config = SettingsConfigDict(
