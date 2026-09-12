@@ -8,7 +8,7 @@ from app.presentation.api.dependencies.authentication import require_self_accoun
 from app.presentation.api.presenters import to_profile_response
 from app.presentation.api.routers._dependencies import AccountUow
 
-router = APIRouter(prefix="/profiles", dependencies=[Depends(require_self_account)])
+router = APIRouter(prefix="/profiles")
 
 
 @router.get("/{account_id}", tags=["Profiles"], response_model=ProfileResponseModel)
@@ -16,7 +16,12 @@ async def get_profile(account_id: UUID, uow: AccountUow) -> ProfileResponseModel
     return to_profile_response(await ProfileService(uow).get(account_id))
 
 
-@router.put("/{account_id}", tags=["Profiles"], response_model=ProfileResponseModel)
+@router.put(
+    "/{account_id}",
+    tags=["Profiles"],
+    response_model=ProfileResponseModel,
+    dependencies=[Depends(require_self_account)],
+)
 async def upsert_profile(
     account_id: UUID,
     body: ProfileUpdateModel,
@@ -42,6 +47,7 @@ async def upsert_profile(
     "/{account_id}",
     tags=["Profiles"],
     status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(require_self_account)],
 )
 async def delete_profile(account_id: UUID, uow: AccountUow) -> Response:
     await ProfileService(uow).delete(account_id)

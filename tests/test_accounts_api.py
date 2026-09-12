@@ -217,7 +217,11 @@ def test_account_scoped_management_rejects_foreign_ids(api: TestClient) -> None:
     requests = (
         ("GET", f"/accounts/{foreign_id}", None),
         ("DELETE", f"/accounts/{foreign_id}", None),
-        ("GET", f"/profiles/{foreign_id}", None),
+        (
+            "PUT",
+            f"/profiles/{foreign_id}",
+            {"display_name": "Changed foreign user"},
+        ),
         ("DELETE", f"/passwords/{foreign_id}", None),
         (
             "POST",
@@ -229,6 +233,32 @@ def test_account_scoped_management_rejects_foreign_ids(api: TestClient) -> None:
 
     for method, path, body in requests:
         assert api.request(method, path, json=body).status_code == 403
+
+
+def test_foreign_profile_can_be_viewed_without_exposing_account_data(api: TestClient) -> None:
+    create_account(api)
+    foreign = api.post(
+        "/accounts/",
+        json={
+            "email": "foreign@example.com",
+            "password": "correct horse battery staple",
+            "profile": {
+                "display_name": "Foreign user",
+                "bio": "Public biography",
+                "organization": "WDL",
+                "website_url": "https://example.test",
+            },
+        },
+    ).json()
+
+    response = api.get(f"/profiles/{foreign['id']}")
+
+    assert response.status_code == 200
+    assert response.json()["display_name"] == "Foreign user"
+    assert response.json()["bio"] == "Public biography"
+    assert response.json()["organization"] == "WDL"
+    assert "identifiers" not in response.json()
+    assert "sessions" not in response.json()
 
 
 def test_openapi_contains_management_and_oauth_apis(api: TestClient) -> None:
