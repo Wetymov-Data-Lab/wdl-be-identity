@@ -1,6 +1,6 @@
 from collections.abc import Iterator
 from datetime import UTC, datetime, timedelta
-from uuid import UUID
+from uuid import UUID, uuid4
 
 import pytest
 from fastapi.testclient import TestClient
@@ -8,6 +8,7 @@ from fastapi.testclient import TestClient
 from app.application.repositories import AccountRepository
 from app.application.unit_of_work import UnitOfWork
 from app.domain.entities import Account
+from app.domain.exceptions import AuthenticationError
 from app.main import create_app
 from app.presentation.api.dependencies.authentication import get_current_account
 from app.presentation.api.dependencies.passwords import get_password_hasher
@@ -82,7 +83,14 @@ def api() -> Iterator[TestClient]:
     unit_of_work = FakeUnitOfWork()
     app = create_app()
     app.dependency_overrides[get_account_uow] = lambda: unit_of_work
-    app.dependency_overrides[get_current_account] = lambda: None
+
+    async def get_test_account() -> Account:
+        try:
+            return next(iter(unit_of_work.accounts.items.values()))
+        except StopIteration as error:
+            raise AuthenticationError("Test account is not registered") from error
+
+    app.dependency_overrides[get_current_account] = get_test_account
     app.dependency_overrides[get_password_hasher] = FakePasswordHasher
     client = TestClient(app)
     yield client
@@ -188,10 +196,39 @@ def test_session_management_does_not_expose_refresh_hash(api: TestClient) -> Non
     assert "refresh_token_hash" not in response.json()
 
 
-def test_missing_account_returns_404(api: TestClient) -> None:
+def test_foreign_account_is_forbidden(api: TestClient) -> None:
+    create_account(api)
     response = api.get("/accounts/00000000-0000-4000-8000-000000000000")
 
-    assert response.status_code == 404
+    assert response.status_code == 403
+
+
+def test_account_scoped_management_rejects_foreign_ids(api: TestClient) -> None:
+    create_account(api)
+    foreign_id = api.post(
+        "/accounts/",
+        json={
+            "email": "foreign@example.com",
+            "password": "correct horse battery staple",
+            "profile": {"display_name": "Foreign user"},
+        },
+    ).json()["id"]
+
+    requests = (
+        ("GET", f"/accounts/{foreign_id}", None),
+        ("DELETE", f"/accounts/{foreign_id}", None),
+        ("GET", f"/profiles/{foreign_id}", None),
+        ("DELETE", f"/passwords/{foreign_id}", None),
+        (
+            "POST",
+            f"/identifiers/{foreign_id}",
+            {"type": "email", "value": "other@example.test"},
+        ),
+        ("DELETE", f"/sessions/{foreign_id}/{uuid4()}", None),
+    )
+
+    for method, path, body in requests:
+        assert api.request(method, path, json=body).status_code == 403
 
 
 def test_openapi_contains_management_and_oauth_apis(api: TestClient) -> None:
@@ -202,8 +239,8 @@ def test_openapi_contains_management_and_oauth_apis(api: TestClient) -> None:
     assert "/profiles/{account_id}" in paths
     assert "/passwords/{account_id}" in paths
     assert "/identifiers/{account_id}" in paths
-    assert "/second-factors/{account_id}" in paths
-    assert "/recovery-codes/{account_id}" in paths
+    assert all(not path.startswith("/second-factors") for path in paths)
+    assert all(not path.startswith("/recovery-codes") for path in paths)
     assert "/sessions/{account_id}" in paths
     assert "/oauth/token" in paths
     assert "/oauth/revoke" in paths

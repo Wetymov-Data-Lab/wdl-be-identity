@@ -1,13 +1,14 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Response, status
+from fastapi import APIRouter, Depends, Response, status
 from wdl_shared.schemas.identity import SessionCreateModel, SessionRefreshModel, SessionResponseModel
 
 from app.application.services.sessions import SessionService
+from app.presentation.api.dependencies.authentication import require_self_account
 from app.presentation.api.presenters import to_session_response
 from app.presentation.api.routers._dependencies import AccountUow
 
-router = APIRouter(prefix="/sessions")
+router = APIRouter(prefix="/sessions", dependencies=[Depends(require_self_account)])
 
 
 @router.post(

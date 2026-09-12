@@ -8,9 +8,7 @@ from app.presentation.api.routers import (
     oauth_router,
     passwords_router,
     profiles_router,
-    recovery_codes_router,
     registrations_router,
-    second_factors_router,
     sessions_router,
 )
 
@@ -21,8 +19,6 @@ authenticated_router.include_router(identifiers_router)
 authenticated_router.include_router(accounts_router)
 authenticated_router.include_router(profiles_router)
 authenticated_router.include_router(passwords_router)
-authenticated_router.include_router(second_factors_router)
-authenticated_router.include_router(recovery_codes_router)
 authenticated_router.include_router(sessions_router)
 
 api_router.include_router(registrations_router)

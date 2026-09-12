@@ -253,8 +253,6 @@ def test_management_routers_require_authentication(
         ("GET", "/identifiers/by-identifier"),
         ("GET", f"/profiles/{account_id}"),
         ("PUT", f"/passwords/{account_id}"),
-        ("POST", f"/second-factors/{account_id}"),
-        ("POST", f"/recovery-codes/{account_id}"),
         ("POST", f"/sessions/{account_id}"),
     )
 
@@ -268,6 +266,8 @@ def test_management_routers_require_authentication(
     profile = api.get(f"/profiles/{account_id}", headers=headers)
     assert profile.status_code == 200
     assert profile.json()["account_id"] == account_id
+    assert api.post(f"/second-factors/{account_id}", headers=headers).status_code == 404
+    assert api.post(f"/recovery-codes/{account_id}", headers=headers).status_code == 404
 
 
 def test_profile_and_password_management_do_not_expose_hashes(
