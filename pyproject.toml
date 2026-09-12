@@ -67,7 +67,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/observability", "src/app"]
+packages = ["src/app", "src/common", "src/observability"]
 
 [tool.hatch.metadata]
 allow-direct-references = true

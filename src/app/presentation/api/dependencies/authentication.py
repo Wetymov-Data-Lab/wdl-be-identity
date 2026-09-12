@@ -1,7 +1,7 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import Depends
+from fastapi import Depends, Request
 from fastapi.security import OAuth2PasswordBearer
 
 from app.application.revocations import SessionRevocationStore
@@ -27,13 +27,16 @@ async def get_access_token(
 
 
 async def get_current_account(
+    request: Request,
     access_token: Annotated[str, Depends(get_access_token)],
     uow: Annotated[UnitOfWork, Depends(get_account_uow)],
     token_codec: Annotated[TokenCodec, Depends(get_token_codec)],
     revocations: Annotated[SessionRevocationStore, Depends(get_session_revocation_store)],
 ) -> Account:
     """Authenticate the request and provide its active account to an endpoint."""
-    return await OAuthService(uow, token_codec, revocations).authenticate_access_token(access_token)
+    account = await OAuthService(uow, token_codec, revocations).authenticate_access_token(access_token)
+    request.state.audit_actor_id = str(account.id)
+    return account
 
 
 async def require_self_account(

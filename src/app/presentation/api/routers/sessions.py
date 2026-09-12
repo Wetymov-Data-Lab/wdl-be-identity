@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Response, status
+from fastapi import APIRouter, Depends, Request, Response, status
 from wdl_shared.schemas.identity import SessionCreateModel, SessionRefreshModel, SessionResponseModel
 
 from app.application.services.sessions import SessionService
@@ -18,6 +18,7 @@ router = APIRouter(prefix="/sessions", dependencies=[Depends(require_self_accoun
     status_code=status.HTTP_201_CREATED,
 )
 async def add_session(
+    request: Request,
     account_id: UUID,
     body: SessionCreateModel,
     uow: AccountUow,
@@ -29,6 +30,7 @@ async def add_session(
         user_agent=body.user_agent,
         expires_at=body.expires_at,
     )
+    request.state.audit_resource_id = str(session.id)
     return to_session_response(session)
 
 

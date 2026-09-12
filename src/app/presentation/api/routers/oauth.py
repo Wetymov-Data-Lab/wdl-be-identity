@@ -28,6 +28,12 @@ def _token_response(pair: TokenPair) -> OAuthTokenResponseModel:
     )
 
 
+def _set_audit_subject(request: Request, token_codec: TokenCodecDep, token: str) -> None:
+    claims = token_codec.decode(token)
+    request.state.audit_actor_id = str(claims.account_id)
+    request.state.audit_resource_id = str(claims.session_id)
+
+
 @router.post(
     "/token",
     response_model=OAuthTokenResponseModel,
@@ -63,11 +69,14 @@ async def token(
             ),
             password_hasher=password_hasher,
         )
+        _set_audit_subject(request, token_codec, pair.access_token)
         return _token_response(pair)
 
     if not refresh_token:
         raise AuthenticationError("Refresh token is required")
-    return _token_response(await service.refresh(refresh_token))
+    pair = await service.refresh(refresh_token)
+    _set_audit_subject(request, token_codec, pair.access_token)
+    return _token_response(pair)
 
 
 @router.post(
@@ -76,6 +85,7 @@ async def token(
     summary="Revoke an access or refresh token session",
 )
 async def revoke(
+    request: Request,
     token: Annotated[str, Form()],
     uow: AccountUow,
     token_codec: TokenCodecDep,
@@ -83,6 +93,10 @@ async def revoke(
     token_type_hint: Annotated[str | None, Form()] = None,
 ) -> Response:
     del token_type_hint
+    try:
+        _set_audit_subject(request, token_codec, token)
+    except AuthenticationError:
+        pass
     await OAuthService(uow, token_codec, revocations).revoke(token)
     return Response(status_code=status.HTTP_200_OK, headers=NO_STORE_HEADERS)
 
@@ -93,11 +107,13 @@ async def revoke(
     summary="End the current bearer-token session",
 )
 async def logout(
+    request: Request,
     uow: AccountUow,
     token_codec: TokenCodecDep,
     revocations: SessionRevocationStoreDep,
     access_token: AccessToken,
 ) -> Response:
+    _set_audit_subject(request, token_codec, access_token)
     await OAuthService(uow, token_codec, revocations).revoke(access_token)
     return Response(status_code=status.HTTP_204_NO_CONTENT, headers=NO_STORE_HEADERS)
 

@@ -11,13 +11,19 @@ from app.infrastructure.database.repositories.accounts import (
 class SQLAlchemyUnitOfWork(UnitOfWork):
     """SQLAlchemy transaction boundary for application use cases."""
 
-    def __init__(self, session_factory: async_sessionmaker[AsyncSession]) -> None:
+    def __init__(
+        self,
+        session_factory: async_sessionmaker[AsyncSession],
+        *,
+        managed_session: AsyncSession | None = None,
+    ) -> None:
         self._session_factory = session_factory
+        self._managed_session = managed_session
         self.session: AsyncSession | None = None
         self._accounts: SQLAlchemyAccountRepository | None = None
 
     async def __aenter__(self) -> "SQLAlchemyUnitOfWork":
-        self.session = self._session_factory()
+        self.session = self._managed_session or self._session_factory()
         self._accounts = SQLAlchemyAccountRepository(self.session)
         return self
 
@@ -30,10 +36,11 @@ class SQLAlchemyUnitOfWork(UnitOfWork):
         if self.session is None:
             return
         try:
-            if exc_type is not None:
+            if exc_type is not None and self._managed_session is None:
                 await self.rollback()
         finally:
-            await self.session.close()
+            if self._managed_session is None:
+                await self.session.close()
             self.session = None
             self._accounts = None
 
@@ -45,11 +52,13 @@ class SQLAlchemyUnitOfWork(UnitOfWork):
 
     async def commit(self) -> None:
         await self.accounts.flush()
-        await self._get_session().commit()
+        if self._managed_session is None:
+            await self._get_session().commit()
         self.accounts.accept_changes()
 
     async def rollback(self) -> None:
-        await self._get_session().rollback()
+        if self._managed_session is None:
+            await self._get_session().rollback()
 
     def _get_session(self) -> AsyncSession:
         if self.session is None:

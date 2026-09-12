@@ -1,7 +1,7 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, Response, status
+from fastapi import APIRouter, Depends, Query, Request, Response, status
 from wdl_shared.schemas.identity import (
     AccountResponseModel,
     IdentifierCreateModel,
@@ -50,6 +50,7 @@ async def get_account_by_identifier(
     dependencies=[Depends(require_self_account)],
 )
 async def add_identifier(
+    request: Request,
     account_id: UUID,
     body: IdentifierCreateModel,
     uow: AccountUow,
@@ -63,6 +64,7 @@ async def add_identifier(
         is_public_contact=body.is_public_contact,
         receive_notifications=body.receive_notifications,
     )
+    request.state.audit_resource_id = str(identifier.id)
     return to_identifier_response(identifier)
 
 

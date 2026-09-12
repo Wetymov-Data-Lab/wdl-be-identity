@@ -1,4 +1,4 @@
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Request, status
 from wdl_shared.schemas.identity import AccountRegistrationModel, AccountResponseModel
 
 from app.application.services.registrations import ProfileCreateData, RegistrationService
@@ -15,6 +15,7 @@ router = APIRouter(prefix="/accounts")
     status_code=status.HTTP_201_CREATED,
 )
 async def register_account(
+    request: Request,
     body: AccountRegistrationModel,
     uow: AccountUow,
     password_hasher: PasswordHasherDep,
@@ -37,4 +38,5 @@ async def register_account(
         profile=profile,
         password_hasher=password_hasher,
     )
+    request.state.audit_resource_id = str(account.id)
     return to_account_response(account)
