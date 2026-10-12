@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 
 from app.infrastructure.config import get_settings
 from app.infrastructure.database.base import Base
+from common.transaction_manager import TransactionManagerBase
 
 database_uri = get_settings().SQLALCHEMY_ASYNC_DATABASE_URI
 if database_uri is None:
@@ -23,6 +24,7 @@ async def create_tables() -> None:
 
     async with engine.begin() as connection:
         await connection.run_sync(Base.metadata.create_all)
+        await connection.run_sync(TransactionManagerBase.metadata.create_all)
 
 
 async def get_session() -> AsyncIterator[AsyncSession]:
