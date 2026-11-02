@@ -66,11 +66,11 @@ Redis с TTL до окончания refresh-сессии; PostgreSQL остаё
 | `make dev`                      | Запустить API в режиме разработки       |
 | `make lint`                     | Проверить код с помощью Ruff            |
 | `make format`                   | Отформатировать код с помощью Ruff      |
-| `make typecheck`                | Проверить типы с помощью mypy            |
+| `make typecheck`                | Проверить типы с помощью mypy           |
 | `make test`                     | Запустить тесты                         |
-| `make check`                    | Запустить lint, typecheck и tests        |
+| `make check`                    | Запустить lint, typecheck и tests       |
 | `make migrate`                  | Применить миграции Alembic              |
-| `make migration name="message"` | Создать автогенерируемую миграцию      |
+| `make migration name="message"` | Создать автогенерируемую миграцию       |
 | `make up`                       | Запустить Docker Compose                |
 | `make down`                     | Остановить сервисы и удалить их volumes |
 
